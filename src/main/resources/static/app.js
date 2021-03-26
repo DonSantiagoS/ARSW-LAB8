@@ -9,12 +9,8 @@ var app = (function () {
     
     var stompClient = null;
 
-    var addPointToCanvas = function (point) {        
-        var canvas = document.getElementById("canvas");
-        var ctx = canvas.getContext("2d");
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, 3, 0, 2 * Math.PI);
-        ctx.stroke();
+    var addPointToCanvas = function (evt) {
+        var point=getMousePosition(evt);
         stompClient.send("/topic/newpoint", {}, JSON.stringify(point));
     };
     
@@ -38,7 +34,12 @@ var app = (function () {
         stompClient.connect({}, function (frame) {
             console.log('Connected: ' + frame);
             stompClient.subscribe('/topic/newpoint', function (eventbody) {
-                            alert(JSON.parse(eventbody.body).x+","+JSON.parse(eventbody.body).y);
+             var point =JSON.parse(eventbody.body);
+             var canvas = document.getElementById("canvas");
+             var ctx = canvas.getContext("2d");
+             ctx.beginPath();
+             ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI);
+             ctx.stroke();
             });
         });
 
@@ -49,10 +50,19 @@ var app = (function () {
     return {
 
         init: function () {
-            var can = document.getElementById("canvas");
+
             
             //websocket connection
             connectAndSubscribe();
+             var canvas = document.getElementById("canvas"),
+             context = canvas.getContext("2d");
+             if (window.PointerEvent) {
+                canvas.addEventListener("pointerdown", addPointToCanvas, false);
+             }
+             else{
+                //Provide fallback for user agents that do not support Pointer Events
+                canvas.addEventListener("mousedown", addPointToCanvas, false);
+             }
         },
 
         publishPoint: function(px,py){
