@@ -11,7 +11,8 @@ var app = (function () {
 
     var addPointToCanvas = function (evt) {
         var point=getMousePosition(evt);
-        stompClient.send("/topic/newpoint", {}, JSON.stringify(point));
+         var id=document.getElementById("idplano").value;
+         stompClient.send("/topic/newpoint."+id, {}, JSON.stringify(point));
     };
     
     
@@ -25,7 +26,7 @@ var app = (function () {
     };
 
 
-    var connectAndSubscribe = function () {
+    var connectAndSubscribe = function (id) {
         console.info('Connecting to WS...');
         var socket = new SockJS('/stompendpoint');
         stompClient = Stomp.over(socket);
@@ -33,13 +34,13 @@ var app = (function () {
         //subscribe to /topic/TOPICXX when connections succeed
         stompClient.connect({}, function (frame) {
             console.log('Connected: ' + frame);
-            stompClient.subscribe('/topic/newpoint', function (eventbody) {
-             var point =JSON.parse(eventbody.body);
-             var canvas = document.getElementById("canvas");
-             var ctx = canvas.getContext("2d");
-             ctx.beginPath();
-             ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI);
-             ctx.stroke();
+            stompClient.subscribe('/topic/newpoint.'+id, function (eventbody) {
+                var point =JSON.parse(eventbody.body);
+                var canvas = document.getElementById("canvas");
+                var ctx = canvas.getContext("2d");
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 1, 0, 2 * Math.PI);
+                ctx.stroke();
             });
         });
 
@@ -53,7 +54,7 @@ var app = (function () {
 
             
             //websocket connection
-            connectAndSubscribe();
+
              var canvas = document.getElementById("canvas"),
              context = canvas.getContext("2d");
              if (window.PointerEvent) {
@@ -72,6 +73,10 @@ var app = (function () {
 
             //publicar el evento
         },
+        connect:function(id){
+                    connectAndSubscribe(id);
+        },
+
 
         disconnect: function () {
             if (stompClient !== null) {
